@@ -1,0 +1,4 @@
+customer,location,gen_capacity
+Alice,New York,500.0
+Bob,Los Angeles,750.5
+Carol,Chicago,620.75
