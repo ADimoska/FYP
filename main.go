@@ -7,16 +7,10 @@ import (
 	"strconv"
 	"encoding/csv"
 	"time"
+	"sort"
+
 )
 
-// func main() {
-// 	myHouse := house.NewHouse("Ana", "London", 5.5 ) 
-// 	fmt.Println("Customer:", myHouse.GetCustomer())
-// 	myHouse.SetCustomer("Yomna")
-// 	fmt.Println("Customer:", myHouse.GetCustomer())
-//     fmt.Println("Location:", myHouse.GetLocation())
-//     fmt.Printf("Generator Capacity: %.2f kW\n", myHouse.GetGen_capacity())
-// }
 
 func ReadCSVFile(filename string) ([][]string, error) {
 	file, err := os.Open(filename)
@@ -128,6 +122,182 @@ func iterateDates(startDateStr, endDateStr string) {
 	}
 }
 
+func processData(records [][]string, houses []*house.House) {
+	const layout = "2/01/2006"
+
+	// Skip header
+	for i, row := range records {
+		if i == 0 {
+			continue
+		}
+		if i == 1  {
+			continue
+		}
+
+		// CSV Structure: Customer, Capacity, Postcode, Type, Date, 0:30, 1:00, ..., 0:00
+		customer := row[0]
+		consumptionType := row[3]
+		date := row[4]
+
+		// Collect time data starting from index 5
+		for periodIndex := 5; periodIndex < len(row)-1; periodIndex++ {
+			periodTime := records[1][periodIndex] // Header has the time labels
+
+			valueStr := row[periodIndex]
+			value, err := strconv.ParseFloat(valueStr, 64)
+			if err != nil {
+				fmt.Printf("Skipping invalid value at row %d, period %d: %v\n", i+1, periodIndex, err)
+				continue
+			}
+
+			// Find the matching house
+			for _, h := range houses {
+				if h.GetCustomer() == customer {
+					h.StoreEnergyData(date, periodTime, consumptionType, value)
+					break
+				}
+			}
+		}
+	}
+}
+
+
+func SaveEnergyDataToCSV(h *house.House, filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// Write header
+	header := []string{"Date", "Time", "ConsumptionType", "Value"}
+	if err := writer.Write(header); err != nil {
+		return fmt.Errorf("failed to write header: %w", err)
+	}
+
+	data := h.GetEnergyData()
+
+	// Sort date keys chronologically
+	type dateEntry struct {
+		str  string
+		time time.Time
+	}
+	const dateLayout = "2/01/2006"
+
+	var dateList []dateEntry
+	for dateStr := range data {
+		parsedDate, err := time.Parse(dateLayout, dateStr)
+		if err != nil {
+			fmt.Printf("Skipping invalid date %s: %v\n", dateStr, err)
+			continue
+		}
+		dateList = append(dateList, dateEntry{str: dateStr, time: parsedDate})
+	}
+	sort.Slice(dateList, func(i, j int) bool {
+		return dateList[i].time.Before(dateList[j].time)
+	})
+
+	// Process each sorted date
+	for _, date := range dateList {
+		times := data[date.str]
+
+		// Sort time keys using actual time
+		type timeEntry struct {
+			str  string
+			time time.Time
+		}
+		const timeLayout = "15:04" // 24-hour clock
+
+		var timeList []timeEntry
+		for timeStr := range times {
+			parsedTime, err := time.Parse(timeLayout, timeStr)
+			if err != nil {
+				fmt.Printf("Skipping invalid time %s: %v\n", timeStr, err)
+				continue
+			}
+			timeList = append(timeList, timeEntry{str: timeStr, time: parsedTime})
+		}
+		sort.Slice(timeList, func(i, j int) bool {
+			return timeList[i].time.Before(timeList[j].time)
+		})
+
+		// For each sorted time
+		for _, timeItem := range timeList {
+			types := times[timeItem.str]
+
+			// Sort consumption types
+			ctypeKeys := make([]string, 0, len(types))
+			for ctype := range types {
+				ctypeKeys = append(ctypeKeys, ctype)
+			}
+			sort.Strings(ctypeKeys)
+
+			// Write the records
+			for _, ctype := range ctypeKeys {
+				value := types[ctype]
+				record := []string{date.str, timeItem.str, ctype, fmt.Sprintf("%.4f", value)}
+				if err := writer.Write(record); err != nil {
+					return fmt.Errorf("failed to write record: %w", err)
+				}
+			}
+		}
+	}
+
+	fmt.Println("Data written to", filename)
+	return nil
+}
+
+func readCSVToMonthDayMap(filename string) (map[string]map[int]float64, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	reader.TrimLeadingSpace = true
+
+	// Read the header to get month names
+	header, err := reader.Read()
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize outer map with month names
+	monthData := make(map[string]map[int]float64)
+	for _, month := range header {
+		monthData[month] = make(map[int]float64)
+	}
+
+	// Read the data rows
+	day := 1
+	for {
+		record, err := reader.Read()
+		if err != nil {
+			break // End of file
+		}
+
+		for i, val := range record {
+			if val == "" {
+				continue // skip missing values
+			}
+			month := header[i]
+			floatVal, err := strconv.ParseFloat(val, 64)
+			if err != nil {
+				return nil, fmt.Errorf("invalid float at day %d in month %s: %v", day, month, err)
+			}
+			monthData[month][day] = floatVal
+		}
+
+		day++
+	}
+
+	return monthData, nil
+}
+
 func main() {
 
 	records, err := ReadCSVFile("2012_2013_Solar_home_electricity_data_v2.csv")
@@ -151,11 +321,34 @@ func main() {
 
 	iterateDates(start_date, end_date)
 
-	//next step Iterate over periods, read the used energy and generated energy 
+	processData(records, houses)
 
-	// for i , h := range houses {
-	// 	fmt.Printf("House %d: {customer:%s location:%s gen_capacity:%.2f}\n", i+1,  h.GetCustomer(), h.GetLocation(), h.GetGen_capacity())
-	// }
+	//used just for testing
+	data := houses[0].GetEnergyData()
+	fmt.Println(data["1/07/2012"]["0:30"]["GC"])
+	
+	//used just for testings
+	for _, h := range houses {
+		if h.GetCustomer() == "1" {
+			err := SaveEnergyDataToCSV(h, "consumer_1_energydata.csv")
+			if err != nil {
+				fmt.Println("Error saving data:", err)
+			}
+			break
+		}
+	}
+	
+	data_weather, err := readCSVToMonthDayMap("weather.csv")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	// used just for testing
+	for day, value := range data_weather["Feb"] {
+		fmt.Printf("Feb %d: %.2f\n", day, value)
+	}
+
 	
 }
 

@@ -8,6 +8,7 @@ type House struct{
 	gc float64
 	gg float64
 	battery float64
+	energyData   map[string]map[string]map[string]float64
 }
 
 func NewHouse(customer, location string, capacity, cl, gc, gg, battery float64) *House {
@@ -19,6 +20,7 @@ func NewHouse(customer, location string, capacity, cl, gc, gg, battery float64) 
 		gc: gc,
 		gg: gg,
 		battery: battery,
+		energyData:   make(map[string]map[string]map[string]float64),		
 		
 	}
 }
@@ -79,7 +81,20 @@ func (h *House) GetBattery() float64 {
 func (h *House) AddBattery(battery float64) {
 	h.battery =+ battery
 }
+ 
+func (h *House) StoreEnergyData(date, time, consumptionType string, value float64) {
+	if _, ok := h.energyData[date]; !ok {
+		h.energyData[date] = make(map[string]map[string]float64)
+	}
+	if _, ok := h.energyData[date][time]; !ok {
+		h.energyData[date][time] = make(map[string]float64)
+	}
+	h.energyData[date][time][consumptionType] = value
+}
 
+func (h *House) GetEnergyData() map[string]map[string]map[string]float64 {
+	return h.energyData
+}
 
 
 
