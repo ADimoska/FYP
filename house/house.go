@@ -96,6 +96,11 @@ func (h *House) GetEnergyData() map[string]map[string]map[string]float64 {
 	return h.energyData
 }
 
+func (h *House) GetCurrentEnergy(date, time string) {
+	h.cl = h.energyData[date][time]["CL"]
+	h.gc = h.energyData[date][time]["GC"]
+	h.gg = h.energyData[date][time]["GG"]
+}
 
 
 

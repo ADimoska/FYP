@@ -96,7 +96,7 @@ func extractDates(records [][]string) (string, string) {
 // parses them into time.Time values, and prints each date from the start to the end, inclusive.
 // It validates that both dates are correctly formatted and that the start date is not after the end date.
 // If any validation fails, it prints an error message and exits the function.
-func iterateDates(startDateStr, endDateStr string) {
+func iterateDates(startDateStr, endDateStr string, houses []*house.House) {
 	const layout = "2/01/2006"
 
 	startDate, err := time.Parse(layout, startDateStr)
@@ -118,7 +118,30 @@ func iterateDates(startDateStr, endDateStr string) {
 	}
 
 	for currentDate := startDate; !currentDate.After(endDate); currentDate = currentDate.AddDate(0, 0, 1) {
-		fmt.Println(currentDate.Format(layout))
+		date_str := currentDate.Format(layout)
+		fmt.Println(date_str)
+		executeDate(date_str, houses)
+	}
+}
+
+func executeDate (date string, houses []*house.House) {
+	timeArray := []string{"0:30","1:00","1:30","2:00","2:30","3:00","3:30","4:00","4:30","5:00","5:30","6:00","6:30","7:00","7:30","8:00","8:30","9:00","9:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00","21:30","22:00","22:30","23:00","23:30","0:00"}
+	for _, time := range timeArray {
+		executeTime(date, time, houses)
+
+		//used just for testing 
+		// if date == "26/04/2013" && time == "0:30" {
+		// 	for _, h := range houses {
+		// 		println(h.GetCL(), h.GetGC(), h.GetGG())
+		// 	}
+		// }
+	}
+}
+
+func executeTime(date, time string, houses []*house.House) {
+	for _, h := range houses {
+		h.GetCurrentEnergy(date, time)
+
 	}
 }
 
@@ -250,6 +273,54 @@ func SaveEnergyDataToCSV(h *house.House, filename string) error {
 	return nil
 }
 
+// func removeHousesUnder365(houses []*house.House) []*house.House {
+// 	var filteredHouses []*house.House
+
+// 	for _, h := range houses {
+// 		fmt.Println("Energy data len", len(h.GetEnergyData()))
+// 		if len(h.GetEnergyData()) >= 365 {
+// 			filteredHouses = append(filteredHouses, h)
+// 		}
+// 	}
+
+// 	return filteredHouses
+
+// }
+
+func removeHousesUnder365(houses []*house.House) []*house.House {
+	var filteredHouses []*house.House
+
+	for _, h := range houses {
+		energyData := h.GetEnergyData()
+
+		// Check first level: number of dates
+		if len(energyData) < 365 {
+			continue
+		}
+
+		valid := true
+
+		for _, times := range energyData {
+			for _, consumptionTypes := range times {
+				if len(consumptionTypes) != 3 {
+					valid = false
+					break
+				}
+			}
+			if !valid {
+				break
+			}
+		}
+
+		if valid {
+			filteredHouses = append(filteredHouses, h)
+		}
+	}
+
+	return filteredHouses
+}
+
+
 func readCSVToMonthDayMap(filename string) (map[string]map[int]float64, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -317,20 +388,27 @@ func main() {
 	start_date, end_date := extractDates(records)
 	fmt.Printf("Final Start date: %s\n", start_date)
 	fmt.Printf("Final End date: %s\n", end_date)
-	//-> itterate over half hours
-
-	iterateDates(start_date, end_date)
+	
 
 	processData(records, houses)
+
+
+	new_houses := removeHousesUnder365(houses) 
+
+	for _, h := range new_houses{
+		fmt.Printf("House %s:\n", h.GetCustomer())
+	}
+
+	iterateDates(start_date, end_date, houses)
 
 	//used just for testing
 	data := houses[0].GetEnergyData()
 	fmt.Println(data["1/07/2012"]["0:30"]["GC"])
 	
-	//used just for testings
+	// used just for testings
 	for _, h := range houses {
-		if h.GetCustomer() == "1" {
-			err := SaveEnergyDataToCSV(h, "consumer_1_energydata.csv")
+		if h.GetCustomer() == "11" {
+			err := SaveEnergyDataToCSV(h, "consumer_11_energydata.csv")
 			if err != nil {
 				fmt.Println("Error saving data:", err)
 			}
@@ -338,16 +416,18 @@ func main() {
 		}
 	}
 	
-	data_weather, err := readCSVToMonthDayMap("weather.csv")
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
+	// data_weather, err := readCSVToMonthDayMap("weather.csv")
+	// if err != nil {
+	// 	fmt.Println("Error:", err)
+	// 	return
+	// }
 
 	// used just for testing
-	for day, value := range data_weather["Feb"] {
-		fmt.Printf("Feb %d: %.2f\n", day, value)
-	}
+	// for day, value := range data_weather["Feb"] {
+	// 	fmt.Printf("Feb %d: %.2f\n", day, value)
+	// }
+	
+
 
 	
 }
