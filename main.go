@@ -320,6 +320,79 @@ func removeHousesUnder365(houses []*house.House) []*house.House {
 	return filteredHouses
 }
 
+func removeHousesOtherCity(houses []*house.House) []*house.House {
+	var filteredHouses []*house.House
+
+	for _, h := range houses {
+		city := h.GetCity()
+
+		// Check first level: number of dates
+		if city == "Other" {
+			continue
+		}
+
+		// valid := true
+
+
+		// if valid {
+		filteredHouses = append(filteredHouses, h)
+		// }
+	}
+
+	return filteredHouses
+}
+
+func classifyCity(lat, lng float64) string {
+	switch {
+	case lat >= -34.2 && lat <= -33.6 && lng >= 150.8 && lng <= 151.4:
+		return "Sydney"
+	case lat >= -33.6 && lat <= -33.1 && lng >= 151.2 && lng <= 151.5:
+		return "Gosford"
+	case lat >= -33.2 && lat <= -32.7 && lng >= 151.5 && lng <= 151.9:
+		return "Newcastle"
+	case lat >= -33.3 && lat <= -32.6 && lng >= 150.9 && lng <= 151.5:
+		return "Cessnock"
+	default:
+		return "Other"
+	}
+}
+
+func ReadPostcodeLatLngMap(filePath string) (map[string][]float64, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file: %v", err)
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read CSV: %v", err)
+	}
+
+	postcodeLatLng := make(map[string][]float64)
+
+	for i, row := range records {
+		// Skip header
+		if i == 0 {
+			continue
+		}
+		if len(row) < 3 {
+			continue
+		}
+		postcode := row[0]
+		lat, err1 := strconv.ParseFloat(row[1], 64)
+		lng, err2 := strconv.ParseFloat(row[2], 64)
+		if err1 != nil || err2 != nil {
+			return nil, fmt.Errorf("invalid lat/lng at row %d: %v, %v", i, err1, err2)
+		}
+		postcodeLatLng[postcode] = []float64{lat, lng}
+	}
+
+	return postcodeLatLng, nil
+}
+
+
 
 func readCSVToMonthDayMap(filename string) (map[string]map[int]float64, error) {
 	file, err := os.Open(filename)
@@ -369,11 +442,26 @@ func readCSVToMonthDayMap(filename string) (map[string]map[int]float64, error) {
 	return monthData, nil
 }
 
+func SetCityToHouses (map_loc map[string][]float64, houses []*house.House){
+	for _, h := range houses{
+		loc := h.GetLocation()
+		lat_lng := map_loc[loc]
+		city := classifyCity(lat_lng[0], lat_lng[1])
+		h.SetCity(city)
+		//fmt.Printf("House %s: %s,%s\n", h.GetCustomer(), city, h.GetLocation())
+	}
+}
 func main() {
 
 	records, err := ReadCSVFile("2012_2013_Solar_home_electricity_data_v2.csv")
 	if err != nil {
 		fmt.Println("Failed to read CSV:", err)
+		return
+	}
+
+	map_loc, err := ReadPostcodeLatLngMap("postcodes.csv")
+	if err != nil {
+		fmt.Println("Failed to read postcodes.csv:", err)
 		return
 	}
 	
@@ -393,10 +481,14 @@ func main() {
 	processData(records, houses)
 
 
-	new_houses := removeHousesUnder365(houses) 
+	houses = removeHousesUnder365(houses) 
 
-	for _, h := range new_houses{
-		fmt.Printf("House %s:\n", h.GetCustomer())
+	SetCityToHouses(map_loc, houses)
+
+	houses = removeHousesOtherCity(houses)
+
+	for _, h := range houses{
+		fmt.Printf("House %s:%s\n", h.GetCustomer(), h.GetCity())
 	}
 
 	iterateDates(start_date, end_date, houses)
@@ -429,7 +521,7 @@ func main() {
 	
 
 
-	
+		
 }
 
 

@@ -3,6 +3,7 @@ package house
 type House struct{
 	customer string
 	location string
+	city string
 	gen_capacity float64
 	cl float64
 	gc float64
@@ -15,6 +16,7 @@ func NewHouse(customer, location string, capacity, cl, gc, gg, battery float64) 
 	return &House{
 		customer: customer,
 		location: location,
+		city: "not defined",
 		gen_capacity: capacity,
 		cl: cl,
 		gc: gc,
@@ -40,6 +42,14 @@ func (h *House) GetLocation() string{
 
 func (h *House) SetLocation(location string) {
 	h.location = location
+}
+
+func (h *House) GetCity() string{
+	return h.city
+}
+
+func (h *House) SetCity(city string) {
+	h.city = city
 }
 
 func (h *House) GetGen_capacity() float64{
