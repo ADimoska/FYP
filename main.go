@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	
 	"encoding/csv"
 	"time"
 	"sort"
+	
+	
 
 )
 
@@ -273,19 +276,7 @@ func SaveEnergyDataToCSV(h *house.House, filename string) error {
 	return nil
 }
 
-// func removeHousesUnder365(houses []*house.House) []*house.House {
-// 	var filteredHouses []*house.House
 
-// 	for _, h := range houses {
-// 		fmt.Println("Energy data len", len(h.GetEnergyData()))
-// 		if len(h.GetEnergyData()) >= 365 {
-// 			filteredHouses = append(filteredHouses, h)
-// 		}
-// 	}
-
-// 	return filteredHouses
-
-// }
 
 func removeHousesUnder365(houses []*house.House) []*house.House {
 	var filteredHouses []*house.House
@@ -394,53 +385,8 @@ func ReadPostcodeLatLngMap(filePath string) (map[string][]float64, error) {
 
 
 
-func readCSVToMonthDayMap(filename string) (map[string]map[int]float64, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
 
-	reader := csv.NewReader(file)
-	reader.TrimLeadingSpace = true
 
-	// Read the header to get month names
-	header, err := reader.Read()
-	if err != nil {
-		return nil, err
-	}
-
-	// Initialize outer map with month names
-	monthData := make(map[string]map[int]float64)
-	for _, month := range header {
-		monthData[month] = make(map[int]float64)
-	}
-
-	// Read the data rows
-	day := 1
-	for {
-		record, err := reader.Read()
-		if err != nil {
-			break // End of file
-		}
-
-		for i, val := range record {
-			if val == "" {
-				continue // skip missing values
-			}
-			month := header[i]
-			floatVal, err := strconv.ParseFloat(val, 64)
-			if err != nil {
-				return nil, fmt.Errorf("invalid float at day %d in month %s: %v", day, month, err)
-			}
-			monthData[month][day] = floatVal
-		}
-
-		day++
-	}
-
-	return monthData, nil
-}
 
 func SetCityToHouses (map_loc map[string][]float64, houses []*house.House){
 	for _, h := range houses{
@@ -519,8 +465,27 @@ func main() {
 	// 	fmt.Printf("Feb %d: %.2f\n", day, value)
 	// }
 	
+	dataStore := make(map[string]map[int]map[string]map[int]float64)
+	loadAllCityYearData(dataStore)
 
+    // Accessing an example value:
+	fmt.Println("--")
+    fmt.Println(dataStore["Sydney"][2012]["Jan"][1])
+	fmt.Println(dataStore["Sydney"][2013]["Jan"][1])
+	fmt.Println(dataStore["Gosford"][2012]["Jan"][1])
+	fmt.Println(dataStore["Gosford"][2013]["Jan"][1])
+	fmt.Println(dataStore["Newcastle"][2012]["Jan"][1])
+	fmt.Println(dataStore["Newcastle"][2013]["Jan"][1])
+	fmt.Println(dataStore["Cessnock"][2012]["Jan"][1])
+	fmt.Println(dataStore["Cessnock"][2013]["Jan"][1])
 
+	// fmt.Println(dataStore["Sydney"][2012].key())
+	// fmt.Println(dataStore)
+	// for key := range dataStore["Sydney"][2012] {
+	// 	fmt.Println("*", key, "*")
+	// 	fmt.Println(len(key)) 
+	// }
+	
 		
 }
 
