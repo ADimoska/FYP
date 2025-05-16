@@ -48,7 +48,7 @@ func ParseHousesFromCSVRecords(records [][]string) []*house.House {
 		}
 
 		if row[0] != addedHouse {
-			h := house.NewHouse(row[0], row[2], capacity, 0.0, 0.0, 0.0, 0.0)
+			h := house.NewHouse(row[0], row[2], capacity, 0.0, 0.0, 0.0, 30.0)
 			houses = append(houses, h)
 			addedHouse = row[0]
 		}
