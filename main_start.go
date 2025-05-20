@@ -337,3 +337,22 @@ func SetCityToHouses (map_loc map[string][]float64, houses []*house.House){
 		//fmt.Printf("House %s: %s,%s\n", h.GetCustomer(), city, h.GetLocation())
 	}
 }
+
+func countHousesByCity(houses []*house.House) map[string]int {
+	cityCounts := make(map[string]int)
+
+	for _, h := range houses {
+		city := h.GetCity()
+		cityCounts[city]++
+	}
+
+	return cityCounts
+}
+
+
+func reverseHouses(houses []*house.House) []*house.House {
+	for i, j := 0, len(houses)-1; i < j; i, j = i+1, j-1 {
+		houses[i], houses[j] = houses[j], houses[i]
+	}
+	return houses
+}

@@ -130,7 +130,7 @@ func (h *House) GetCurrentEnergy(date, time string) {
 	h.gg = h.energyData[date][time]["GG"]
 }
 
-func (h *House) SetLast3Days(refDate string) {
+func (h *House) SetLast3Days(refDate string, multi float64) {
 	const layout = "2/01/2006"
 	referenceTime, err := time.Parse(layout, refDate)
 	if err != nil {
@@ -158,7 +158,7 @@ func (h *House) SetLast3Days(refDate string) {
 		}
 	}
 
-	h.last3DaysConsumption = (clTotal + gcTotal) // multiply by int to increase treshold for E3
+	h.last3DaysConsumption = multi*(clTotal + gcTotal) // multiply by int to increase treshold for E3
 }
 
 func (h *House) Getlast3DaysConsumption() float64 {
@@ -167,7 +167,7 @@ func (h *House) Getlast3DaysConsumption() float64 {
 
 
 
-func (h *House) SetNext3Days(refDate string) {
+func (h *House) SetNext3Days(refDate string,  multi float64) { //E3
 	const layout = "2/01/2006"
 	baseDate, err := time.Parse(layout, refDate)
 	if err != nil {
@@ -177,6 +177,6 @@ func (h *House) SetNext3Days(refDate string) {
 
 	// Call SetLast3Days for the 3 previous days
 	refDate2 := baseDate.AddDate(0, 0, 3).Format(layout)
-	h.SetLast3Days(refDate2)
+	h.SetLast3Days(refDate2, multi) //E3
 	
 }

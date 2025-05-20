@@ -10,24 +10,26 @@ import (
 
 // Generates Histogram for total Blackouts per house
 func CallPythonToGenerateHistogram(houses []*house.House) error {
-	totalBlackouts := 0
-	var blackouts []int
-	zeroBlackoutCount := 0
+	// totalBlackouts := 0
+	// var blackouts []int
+	// zeroBlackoutCount := 0
 
-	for _, h := range houses {
-		count := h.GetBlackouts()
-		blackouts = append(blackouts, count)
-		if count == 0 {
-			zeroBlackoutCount++
-		}
-		totalBlackouts += count
+	// for _, h := range houses {
+	// 	count := h.GetBlackouts()
+	// 	blackouts = append(blackouts, count)
+	// 	if count == 0 {
+	// 		zeroBlackoutCount++
+	// 	}
+	// 	totalBlackouts += count
 
-	}
-	fmt.Println("Total number of blackouts, python func result:", totalBlackouts)
-	fmt.Println("Number of houses with 0 blackouts:", zeroBlackoutCount)
+	// }
+	// fmt.Println("Total number of blackouts, python func result:", totalBlackouts)
+	// fmt.Println("Number of houses with 0 blackouts:", zeroBlackoutCount)
+	// totalBlackouts_global = totalBlackouts
+	// zeroBlackoutCount_global = zeroBlackoutCount
+	blackouts := CountTotalBlackouts(houses)
 
-
-
+	
 	data, err := json.Marshal(blackouts)
 	if err != nil {
 		return err
@@ -70,4 +72,26 @@ func CallPythonToPlotPoolBattery(PoolBattery []float64) error {
 
 	fmt.Println("Python plot saved as pool_battery_plot.png")
 	return nil
+}
+
+
+func CountTotalBlackouts(houses []*house.House) []int{
+	totalBlackouts := 0
+	var blackouts []int
+	zeroBlackoutCount := 0
+
+	for _, h := range houses {
+		count := h.GetBlackouts()
+		blackouts = append(blackouts, count)
+		if count == 0 {
+			zeroBlackoutCount++
+		}
+		totalBlackouts += count
+
+	}
+	fmt.Println("Total number of blackouts, python func result:", totalBlackouts)
+	fmt.Println("Number of houses with 0 blackouts:", zeroBlackoutCount)
+	totalBlackouts_global = totalBlackouts
+	zeroBlackoutCount_global = zeroBlackoutCount
+	return blackouts
 }
