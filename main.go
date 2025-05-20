@@ -12,7 +12,7 @@ import (
 	
 )
 
-
+var PoolBattery []float64
 // iterateDates takes two date strings (start and end) in the format "2/01/2006",
 // parses them into time.Time values, and prints each date from the start to the end, inclusive.
 // It validates that both dates are correctly formatted and that the start date is not after the end date.
@@ -44,41 +44,33 @@ func iterateDates(startDateStr, endDateStr string, houses []*house.House, p *poo
 		executeDate(date_str, houses, p)
 	}
 	GenerateBlackoutChart(houses, "blackouts.html")
-	// bar := charts.NewBar()
-	// var houseIDs []string
-	// var blackoutCounts []opts.BarData
-	// var blackoutCounts_ []int
-
-	// for _, h := range houses {
-	// 		fmt.Println(h.GetCustomer(), ":",h.GetBlackouts())
-	// 		houseIDs = append(houseIDs, h.GetCustomer())
-	// 		blackoutCounts = append(blackoutCounts, opts.BarData{Value: h.GetBlackouts()})
-			
-	// 		blackoutCounts_ = append(blackoutCounts_, h.GetBlackouts())
 	
-	// }
 	CallPythonToGenerateHistogram(houses)
-	// total_blackouts := 0
-	// for _, count := range blackoutCounts_ {
-	// 	total_blackouts += count
-	// }
-	// fmt.Println("Total blackout count:", total_blackouts)
-
-	// Set chart data
-	// bar.SetGlobalOptions(
-	// 	charts.WithTitleOpts(opts.Title{Title: "Blackouts per House"}),
-	// )
-	// bar.SetXAxis(houseIDs).AddSeries("Blackouts", blackoutCounts)
-
-	// // Render chart to HTML file
-	// f, _ := os.Create("blackouts.html")
-	// defer f.Close()
-	// bar.Render(f)
-	// fmt.Println(len(houses))
+	CallPythonToPlotPoolBattery(PoolBattery)
+	fmt.Println("Average threshold:",(total3DaySum/total3DayCount)) //E3 
+	
 }
 
+var total3DaySum float64 = 0.0 //E3
+var total3DayCount float64 = 0 //E3
 func executeDate (date string, houses []*house.House, p *pool.Pool) {
-	timeArray := []string{"0:30","1:00","1:30","2:00","2:30","3:00","3:30","4:00","4:30","5:00","5:30","6:00","6:30","7:00","7:30","8:00","8:30","9:00","9:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00","21:30","22:00","22:30","23:00","23:30","0:00"}
+	timeArray := []string{"0:30","1:00","1:30","2:00","2:30","3:00","3:30","4:00","4:30","5:00","5:30","6:00","6:30","7:00","7:30","8:00","8:30","9:00","9:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00","21:30","22:00","22:30","23:00","23:30","0:00"}	
+	// E3 start =================================================================
+	if date == "1/07/2012" || date == "2/07/2012" || date == "3/07/2012"{
+		for _, h := range houses {
+		h.SetNext3Days(date)
+		total3DaySum += h.Getlast3DaysConsumption()
+		total3DayCount++
+		}
+	} else {
+		for _, h := range houses {
+			h.SetLast3Days(date)
+			total3DaySum += h.Getlast3DaysConsumption()
+			total3DayCount++
+			}
+	}
+	// E3 end =================================================================
+	
 	for _, time := range timeArray {
 		executeTime(date, time, houses, p)
 
@@ -103,10 +95,24 @@ func executeTime(date, time string, houses []*house.House, p *pool.Pool) {
 		h.AddBattery(-(h.GetGC()))
 		h.AddBattery(-(h.GetCL()))
 		if h.GetBattery() < 0{
-			h.AddBlackout()
-			h.ResetBattery()
+			shortage := -(h.GetBattery()) 
+			if p.GetBattery() < shortage{
+				h.AddBlackout()
+				h.ResetBattery()
+			} else {
+				p.WithdrawEnergy(-h.GetBattery())
+			}
+
 		}
-		h.AddBattery(5*h.GetGG()) // change int to change capacity experiment_id_1 unlimited battery per house, no pool, no exchange
+		h.AddBattery(10*h.GetGG()) // change int to change capacity experiment_id_1 unlimited battery per house, no pool, no exchange
+		donateTreshold := h.Getlast3DaysConsumption() // E3 
+		if h.GetBattery() > donateTreshold{ // E3
+			extraBattery := h.GetBattery() - donateTreshold // E3
+			p.ContributeEnergy(extraBattery)
+			h.AddBattery(-extraBattery)
+
+		}
+		PoolBattery = append(PoolBattery, p.GetBattery())
 		
 
 	}

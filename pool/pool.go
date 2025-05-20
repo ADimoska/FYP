@@ -16,7 +16,7 @@ func (p *Pool) ContributeEnergy(Energy float64){
 	p.battery += Energy
 }
 
-func (p *Pool) WhitdrawEnergy(Energy float64){
+func (p *Pool) WithdrawEnergy(Energy float64){
 	p.battery -= Energy
 }
 
@@ -26,6 +26,10 @@ func (p *Pool) EmptyPool() {
 
 func (p *Pool) GetEmptiedCount() int {
 	return p.emptied
+}
+
+func (p *Pool) GetBattery() float64 {
+	return p.battery
 }
 
 

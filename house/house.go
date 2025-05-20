@@ -1,5 +1,10 @@
 package house
 
+import(
+	"time"
+	"fmt"
+)
+
 type House struct{
 	customer string
 	location string
@@ -11,6 +16,7 @@ type House struct{
 	battery float64
 	energyData   map[string]map[string]map[string]float64
 	blackouts int
+	last3DaysConsumption float64
 }
 
 func NewHouse(customer, location string, capacity, cl, gc, gg, battery float64) *House {
@@ -124,14 +130,53 @@ func (h *House) GetCurrentEnergy(date, time string) {
 	h.gg = h.energyData[date][time]["GG"]
 }
 
-func (h *House) SetBatteryCapacity() {
+func (h *House) SetLast3Days(refDate string) {
+	const layout = "2/01/2006"
+	referenceTime, err := time.Parse(layout, refDate)
+	if err != nil {
+		fmt.Printf("invalid reference date format: %v", err)
+	}
 
+	var clTotal, gcTotal float64
+
+	// Iterate over the previous 3 days
+	for i := 1; i <= 3; i++ {
+		day := referenceTime.AddDate(0, 0, -i).Format(layout)
+
+		dayData, exists := h.energyData[day]
+		if !exists {
+			continue
+		}
+
+		for _, consumptionTypes := range dayData {
+			if val, ok := consumptionTypes["CL"]; ok {
+				clTotal += val
+			}
+			if val, ok := consumptionTypes["GC"]; ok {
+				gcTotal += val
+			}
+		}
+	}
+
+	h.last3DaysConsumption = (clTotal + gcTotal) // multiply by int to increase treshold for E3
+}
+
+func (h *House) Getlast3DaysConsumption() float64 {
+	return h.last3DaysConsumption
 }
 
 
 
+func (h *House) SetNext3Days(refDate string) {
+	const layout = "2/01/2006"
+	baseDate, err := time.Parse(layout, refDate)
+	if err != nil {
+		fmt.Printf("Invalid date format in SetNext3Days: %v\n", err)
+		return
+	}
 
-
-
-
-
+	// Call SetLast3Days for the 3 previous days
+	refDate2 := baseDate.AddDate(0, 0, 3).Format(layout)
+	h.SetLast3Days(refDate2)
+	
+}
