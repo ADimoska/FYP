@@ -9,6 +9,7 @@ type House struct{
 	customer string
 	location string
 	city string
+	communityID int
 	gen_capacity float64
 	cl float64
 	gc float64
@@ -58,6 +59,19 @@ func (h *House) GetCity() string{
 
 func (h *House) SetCity(city string) {
 	h.city = city
+}
+
+func (h *House) GetCommunityID() int{
+	return h.communityID
+}
+
+func (h *House) SetCommunityID(city string) {
+	if h.city == "Sydney" {
+		h.communityID = 1
+	} else {
+		h.communityID = 2
+	}
+	
 }
 
 func (h *House) GetGen_capacity() float64{

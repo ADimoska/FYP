@@ -100,3 +100,33 @@ func loadAllCityYearData(dataStore map[string]map[int]map[string]map[int]float64
 		}
 	}
 }
+
+// ================================== Mountain ==================================
+
+func getGGMultiplier(communityID int, currentTime string) float64 {
+	c1GGtimes := map[string]bool{
+		"0:30": true, "1:00": true, "1:30": true, "2:00": true, "2:30": true, "3:00": true,
+		"3:30": true, "4:00": true, "4:30": true, "5:00": true, "5:30": true, "6:00": true,
+		"6:30": true, "7:00": true, "7:30": true, "8:00": true, "8:30": true, "9:00": true,
+		"9:30": true, "10:00": true, "10:30": true, "11:00": true, "11:30": true, "12:00": true,
+		"12:30": true,
+	}
+	c2GGtimes := map[string]bool{
+		"13:00": true, "13:30": true, "14:00": true, "14:30": true, "15:00": true, "15:30": true,
+		"16:00": true, "16:30": true, "17:00": true, "17:30": true, "18:00": true, "18:30": true,
+		"19:00": true, "19:30": true, "20:00": true, "20:30": true, "21:00": true, "21:30": true,
+		"22:00": true, "22:30": true, "23:00": true, "23:30": true, "0:00": true,
+	}
+
+	switch communityID {
+	case 1:
+		if c1GGtimes[currentTime] {
+			return 20.0
+		}
+	case 2:
+		if c2GGtimes[currentTime] {
+			return 20.0
+		}
+	}
+	return 0.0
+}

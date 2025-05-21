@@ -334,6 +334,7 @@ func SetCityToHouses (map_loc map[string][]float64, houses []*house.House){
 		lat_lng := map_loc[loc]
 		city := classifyCity(lat_lng[0], lat_lng[1])
 		h.SetCity(city)
+		h.SetCommunityID(city)
 		//fmt.Printf("House %s: %s,%s\n", h.GetCustomer(), city, h.GetLocation())
 	}
 }
@@ -349,6 +350,22 @@ func countHousesByCity(houses []*house.House) map[string]int {
 	return cityCounts
 }
 
+func countHousesByCommunity(houses []*house.House) (int, int) {
+	c1total := 0
+	c2total :=0
+	for _, h := range houses {
+		c := h.GetCommunityID()
+		if c == 1{
+			c1total++
+		}
+		if c == 2{
+			c2total++
+		}
+		
+	}
+
+	return c1total, c2total
+}
 
 func reverseHouses(houses []*house.House) []*house.House {
 	for i, j := 0, len(houses)-1; i < j; i, j = i+1, j-1 {

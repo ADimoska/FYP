@@ -95,3 +95,39 @@ func CountTotalBlackouts(houses []*house.House) []int{
 	zeroBlackoutCount_global = zeroBlackoutCount
 	return blackouts
 }
+
+func CountBlackoutsByCommunity(houses []*house.House) (int, int) {
+	community1Blackouts := 0
+	community2Blackouts := 0
+
+	zeroBlackoutCountC1 := 0
+	zeroBlackoutCountC2 := 0
+
+
+	for _, h := range houses {
+		count := h.GetBlackouts()
+		community := h.GetCommunityID()
+
+		if community == 1 {
+			if count == 0 {
+				zeroBlackoutCountC1++
+			}
+			community1Blackouts += count
+		} else if community == 2 {
+			if count == 0 {
+				zeroBlackoutCountC2++
+			}
+			community2Blackouts += count
+		}
+	}
+
+	fmt.Println("Total blackouts in Community 1:", community1Blackouts)
+	fmt.Println("Total blackouts in Community 2:", community2Blackouts)
+	totalBlackoutsC1_global = community1Blackouts
+	totalBlackoutsC2_global = community2Blackouts
+	zeroBlackoutCountC1_global = zeroBlackoutCountC1
+	zeroBlackoutCountC2_global = zeroBlackoutCountC2
+
+	return community1Blackouts, community2Blackouts
+}
+
