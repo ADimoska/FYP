@@ -1,7 +1,7 @@
-Sydney: 49 houses
-Gosford: 36 houses
-Cessnock: 4 houses
-Newcastle: 25 houses
+Sydney: 49 houses Community1
+Gosford: 36 houses Community2
+Cessnock: 4 houses Community2
+Newcastle: 25 houses Community2
 
 If the cities are just grouped in two commmunities, same sunlight, two different pools, donate everything
 Total blackouts in Community 1: 296844

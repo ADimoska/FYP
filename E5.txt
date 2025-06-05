@@ -1,0 +1,7 @@
+Mountain benchmark, 170 capacity for each house, the copmmon poools have len(houses_comunity)*2*170, the pools give energy to each other when the battery is full and ask for energy when they don't have enough
+Total Blackouts: 29308
+Total Blackouts C1: 10696
+Total Blackouts C2: 18612
+Zero Blackout Houses: 62
+Zero Blackout Houses C1: 27
+Zero Blackout Houses C2: 35

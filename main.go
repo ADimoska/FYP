@@ -24,7 +24,7 @@ var totalBlackoutsC2_global int = 0
 var zeroBlackoutCount_global int = 0 // used for autoE2E3
 var zeroBlackoutCountC1_global int = 0
 var zeroBlackoutCountC2_global int = 0
-var PoolBattery []float64
+var PoolBattery1 []float64
 // iterateDates takes two date strings (start and end) in the format "2/01/2006",
 // parses them into time.Time values, and prints each date from the start to the end, inclusive.
 // It validates that both dates are correctly formatted and that the start date is not after the end date.
@@ -60,7 +60,7 @@ func iterateDates(startDateStr, endDateStr string, houses []*house.House, p1, p2
 	//CallPythonToGenerateHistogram(houses)
 	CountTotalBlackouts(houses)
 	CountBlackoutsByCommunity(houses)
-	//CallPythonToPlotPoolBattery(PoolBattery)
+	CallPythonToPlotPoolBattery(PoolBattery1)
 	fmt.Println("Average threshold:",(total3DaySum/total3DayCount)) //E3 
 	
 }
@@ -70,19 +70,19 @@ var total3DayCount float64 = 0 //E3
 func executeDate (date string, houses []*house.House, p1, p2 *pool.Pool, input int) {
 	timeArray := []string{"0:30","1:00","1:30","2:00","2:30","3:00","3:30","4:00","4:30","5:00","5:30","6:00","6:30","7:00","7:30","8:00","8:30","9:00","9:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00","21:30","22:00","22:30","23:00","23:30","0:00"}	
 	// E3 start =================================================================
-	if date == "1/07/2012" || date == "2/07/2012" || date == "3/07/2012"{
-		for _, h := range houses {
-		h.SetNext3Days(date, float64(input))
-		total3DaySum += h.Getlast3DaysConsumption()
-		total3DayCount++
-		}
-	} else {
-		for _, h := range houses {
-			h.SetLast3Days(date, float64(input))
-			total3DaySum += h.Getlast3DaysConsumption()
-			total3DayCount++
-			}
-	}
+	// if date == "1/07/2012" || date == "2/07/2012" || date == "3/07/2012"{
+	// 	for _, h := range houses {
+	// 	h.SetNext3Days(date, float64(input))
+	// 	total3DaySum += h.Getlast3DaysConsumption()
+	// 	total3DayCount++
+	// 	}
+	// } else {
+	// 	for _, h := range houses {
+	// 		h.SetLast3Days(date, float64(input))
+	// 		total3DaySum += h.Getlast3DaysConsumption()
+	// 		total3DayCount++
+	// 		}
+	// }
 	// E3 end =================================================================
 	
 	for _, time := range timeArray {
@@ -105,12 +105,18 @@ func executeDate (date string, houses []*house.House, p1, p2 *pool.Pool, input i
 
 func executeTime(date, time string, houses []*house.House, p1, p2 *pool.Pool, input int) {
 	for _, h := range houses {
-		var p *pool.Pool		//E4
+		var p *pool.Pool
+		var po *pool.Pool		//E4
 		c := h.GetCommunityID()
 		if c == 1 {
 			p = p1
 		} else {
 			p = p2
+		}
+		if p == p1{
+			po = p2
+		} else {
+			po = p1
 		}
 		h.GetCurrentEnergy(date, time)
 		h.AddBattery(-(h.GetGC()))
@@ -118,24 +124,34 @@ func executeTime(date, time string, houses []*house.House, p1, p2 *pool.Pool, in
 		if h.GetBattery() < 0{
 			shortage := -(h.GetBattery()) 
 			if p.GetBattery() < shortage{
-				h.AddBlackout()
-				h.ResetBattery()
+				if po.GetBattery() < shortage{
+					h.AddBlackout()
+					h.ResetBattery()
+				} else {
+					po.GiveToOtherPool(-h.GetBattery(), p)
+					p.GiveEnergy(-h.GetBattery())
+				}
+				
 			} else {
-				p.WithdrawEnergy(-h.GetBattery())
+				p.GiveEnergy(-h.GetBattery())
 			}
 
 		}
 		multiGG := getGGMultiplier(c, time) //E4
 		h.AddBattery(multiGG*h.GetGG()) // change int to change capacity experiment_id_1 unlimited battery per house, no pool, no exchange
-		donateTreshold := h.Getlast3DaysConsumption() // E3 E4
+		donateTreshold := 170.00 // E3 E4
 		// donateTreshold := input
 		if h.GetBattery() > donateTreshold{ // E3
 			extraBattery := h.GetBattery() - donateTreshold // E3
-			p.ContributeEnergy(extraBattery)
+			p.AcceptEnergy(extraBattery)
+			if p.GetBattery() > p.GetCapacity(){
+				poolExtraBattery := p.GetBattery() - p.GetCapacity()
+				p.GiveToOtherPool(poolExtraBattery, po)
+			}
 			h.AddBattery(-extraBattery)
 
 		}
-		PoolBattery = append(PoolBattery, p.GetBattery())
+		PoolBattery1 = append(PoolBattery1, p2.GetBattery())
 		
 
 	}
@@ -156,8 +172,8 @@ func runSimulation(input int) {
 	}
 	
 	houses := ParseHousesFromCSVRecords(records)
-	pool1 := pool.NewPool(0)
-	pool2 := pool.NewPool(0)
+	pool1 := pool.NewPool(0, 170*2*49)
+	pool2 := pool.NewPool(0, 170*2*65)
 	
 	for i, h := range houses{
 		fmt.Printf("House %d: %+v\n", i+1, *h)
@@ -186,6 +202,9 @@ func runSimulation(input int) {
 	}
 
 	iterateDates(start_date, end_date, houses, pool1, pool2, input)
+
+	fmt.Print(countHousesByCommunity(houses))
+
 
 	
 	
@@ -257,7 +276,7 @@ func runSimulation(input int) {
 
 
 func main() {
-	for i := 0; i < 41; i++ { 
+	for i := 0; i < 1; i++ { 
 		fmt.Printf("Running simulation #%d\n", i+1)
 		runSimulation(i)
 	}

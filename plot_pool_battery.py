@@ -5,8 +5,10 @@ import matplotlib.pyplot as plt
 def main():
     # Read JSON input from stdin
     data = json.load(sys.stdin)
-    data = data[1987280:]
-
+    # data = data[1987280:]
+    # data = data[:499320]
+    # data = data[:41610]
+    data = data[13000:16000]
     # Plot the PoolBattery values
     plt.figure(figsize=(10, 6))
     plt.plot(data, marker='o')

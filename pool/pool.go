@@ -2,21 +2,23 @@ package pool
 
 type Pool struct{
 	battery float64	
+	capacity float64
 	emptied int
 }
 
-func NewPool(battery float64) *Pool {
+func NewPool(battery, capacity float64 ) *Pool {
 	return &Pool{
 		battery: battery,
+		capacity: capacity,
 		emptied: 0,
 	}
 }
 
-func (p *Pool) ContributeEnergy(Energy float64){
+func (p *Pool) AcceptEnergy(Energy float64){
 	p.battery += Energy
 }
 
-func (p *Pool) WithdrawEnergy(Energy float64){
+func (p *Pool) GiveEnergy(Energy float64){
 	p.battery -= Energy
 }
 
@@ -32,4 +34,15 @@ func (p *Pool) GetBattery() float64 {
 	return p.battery
 }
 
+func (p *Pool) GetCapacity() float64 {
+	return p.capacity
+}
+
+func (p *Pool) GiveToOtherPool(amount float64, po *Pool){
+	p.battery = p.battery - amount
+	po.battery = po.battery + amount
+	if po.battery > po.capacity{
+		po.battery = po.capacity
+	}
+}
 
