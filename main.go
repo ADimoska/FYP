@@ -123,7 +123,7 @@ func executeTime(date, time string, houses []*house.House, p *pool.Pool, input f
 	}
 }
 
-func runSimulation(input float64) {
+func runSimulation(input float64, factor int) {
 
 	records, err := ReadCSVFile("2012_2013_Solar_home_electricity_data_v2.csv")
 	if err != nil {
@@ -137,7 +137,10 @@ func runSimulation(input float64) {
 		return
 	}
 	
-	houses := ParseHousesFromCSVRecords(records)
+	// houses := ParseHousesFromCSVRecords(records)
+	//repeatedRecords := repeatCSVRecords(records, 2)
+	houses := repeatParsedHouses(records, factor)
+
 	pool := pool.NewPool(0)
 	
 	for i, h := range houses{
@@ -151,14 +154,22 @@ func runSimulation(input float64) {
 	fmt.Printf("Final End date: %s\n", end_date)
 	
 
-	processData(records, houses)
+
+	processInChunks(houses, records)
+	fmt.Printf("Debug processData: %d\n", len(houses))
+	
 
 
 	houses = removeHousesUnder365(houses) 
+	fmt.Printf("Debug removeHousesUnder365: %d\n", len(houses))
+
 
 	SetCityToHouses(map_loc, houses)
 
 	houses = removeHousesOtherCity(houses)
+	fmt.Printf("Debug removeHousesOtherCity: %d\n", len(houses))
+
+	
 
 	// houses = reverseHouses(houses)
 
@@ -207,8 +218,8 @@ func runSimulation(input float64) {
 	}
 
 
-	totalBlackouts_global_array = append(totalBlackouts_global_array, totalBlackouts_global)
-	zeroBlackoutCount_global_array = append(zeroBlackoutCount_global_array, zeroBlackoutCount_global)
+	totalBlackouts_global_array = append(totalBlackouts_global_array, totalBlackouts_global / len(houses)) //ESize
+	zeroBlackoutCount_global_array = append(zeroBlackoutCount_global_array, zeroBlackoutCount_global) //ESize
 	// Reset global counters before each run
 	total3DaySum = 0.0
 	total3DayCount = 0.0
@@ -233,10 +244,14 @@ func main() {
 	// }
 
 	// average_thresholds := []float64{0.00, 56.03, 112.06, 168.09, 224.12, 280.15, 336.18, 392.21, 448.24, 504.27, 560.30, 616.33, 672.36, 728.39, 784.42, 840.44, 896.47, 952.50, 1008.53, 1064.56, 1120.59, 1176.62, 1232.65, 1288.68, 1344.71, 1400.74, 1456.77, 1512.80, 1568.83, 1624.86, 1680.89, 1736.92, 1792.95, 1848.98, 1905.01, 1961.04, 2017.07, 2073.10, 2129.13, 2185.16, 2241.19}
-	average_thresholds := []float64{0.00}
+	average_thresholds := []float64{168.09}
 	for i, avg := range average_thresholds {
 		fmt.Printf("Running simulation #%d\n", i+1)
-		runSimulation(avg)
+		for _, factor := range []int{1,5,10,15,20,25,30}{
+		// for _, factor := range []int{5}{
+
+			runSimulation(avg, factor)
+		}
 	}
 
 	

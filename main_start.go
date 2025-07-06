@@ -356,3 +356,33 @@ func reverseHouses(houses []*house.House) []*house.House {
 	}
 	return houses
 }
+
+func repeatParsedHouses(records [][]string, times int) []*house.House {
+	if times <= 0 {
+		fmt.Println("Output length: 0")
+		return []*house.House{}
+	}
+
+	var allHouses []*house.House
+	for i := 0; i < times; i++ {
+		newHouses := ParseHousesFromCSVRecords(records)
+		allHouses = append(allHouses, newHouses...)
+	}
+
+	fmt.Printf("Output length: %d\n", len(allHouses))
+	return allHouses
+}
+
+
+func processInChunks(houses []*house.House, records [][]string) {
+	total := len(houses)
+	for i := 0; i < total; i += 300 {
+		end := i + 300
+		if end > total {
+			end = total
+		}
+		chunk := houses[i:end]
+		processData(records, chunk)
+	}
+}
+
