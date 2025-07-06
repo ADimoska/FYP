@@ -29,7 +29,7 @@ var PoolBattery1 []float64
 // parses them into time.Time values, and prints each date from the start to the end, inclusive.
 // It validates that both dates are correctly formatted and that the start date is not after the end date.
 // If any validation fails, it prints an error message and exits the function.
-func iterateDates(startDateStr, endDateStr string, houses []*house.House, p1, p2 *pool.Pool, input int) { //E2E3auto
+func iterateDates(startDateStr, endDateStr string, houses []*house.House, p1, p2 *pool.Pool, weatherDataStore map[string]map[int]map[string]map[int]float64, input int) { //E2E3auto
 	const layout = "2/01/2006"
 
 	startDate, err := time.Parse(layout, startDateStr)
@@ -53,7 +53,7 @@ func iterateDates(startDateStr, endDateStr string, houses []*house.House, p1, p2
 	for currentDate := startDate; !currentDate.After(endDate); currentDate = currentDate.AddDate(0, 0, 1) {
 		date_str := currentDate.Format(layout)
 		fmt.Println(date_str)
-		executeDate(date_str, houses, p1, p2, input) //E2E3auto
+		executeDate(date_str, houses, p1, p2, weatherDataStore, input) //E2E3auto
 	}
 	//GenerateBlackoutChart(houses, "blackouts.html")
 	
@@ -67,7 +67,7 @@ func iterateDates(startDateStr, endDateStr string, houses []*house.House, p1, p2
 
 var total3DaySum float64 = 0.0 //E3
 var total3DayCount float64 = 0 //E3
-func executeDate (date string, houses []*house.House, p1, p2 *pool.Pool, input int) {
+func executeDate (date string, houses []*house.House, p1, p2 *pool.Pool, weatherDataStore map[string]map[int]map[string]map[int]float64, input int) {
 	timeArray := []string{"0:30","1:00","1:30","2:00","2:30","3:00","3:30","4:00","4:30","5:00","5:30","6:00","6:30","7:00","7:30","8:00","8:30","9:00","9:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00","21:30","22:00","22:30","23:00","23:30","0:00"}	
 	// E3 start =================================================================
 	// if date == "1/07/2012" || date == "2/07/2012" || date == "3/07/2012"{
@@ -84,9 +84,22 @@ func executeDate (date string, houses []*house.House, p1, p2 *pool.Pool, input i
 	// 		}
 	// }
 	// E3 end =================================================================
+	gosfordNextDaySolarExposure, err := GetSolarExposure("Gosford", date, weatherDataStore)
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+	newcastleNextDaySolarExposure, err := GetSolarExposure("Newcastle", date, weatherDataStore)
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+	c1_SE, err := GetSolarExposure("Sydney", date, weatherDataStore)
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+	c2_SE := (gosfordNextDaySolarExposure + newcastleNextDaySolarExposure) / 2
 	
 	for _, time := range timeArray {
-		executeTime(date, time, houses, p1, p2, input)
+		executeTime(date, time, houses, p1, p2, c1_SE, c2_SE, input)
 
 		//used just for testing 
 		// if date == "26/04/2013" && time == "0:30" {
@@ -103,7 +116,9 @@ func executeDate (date string, houses []*house.House, p1, p2 *pool.Pool, input i
 	// }
 }
 
-func executeTime(date, time string, houses []*house.House, p1, p2 *pool.Pool, input int) {
+func executeTime(date, time string, houses []*house.House, p1, p2 *pool.Pool, c1_SE float64, c2_SE float64, input int) {
+	p1Price := p1.CalculateCostPerKWH(date, c1_SE)
+	p2Price := p2.CalculateCostPerKWH(date, c2_SE)
 	for _, h := range houses {
 		var p *pool.Pool
 		var po *pool.Pool		//E4
@@ -200,8 +215,10 @@ func runSimulation(input int) {
 	for _, h := range houses{
 		fmt.Printf("House %s:%s\n", h.GetCustomer(), h.GetCity())
 	}
+	dataStore := make(map[string]map[int]map[string]map[int]float64)
+	loadAllCityYearData(dataStore)
 
-	iterateDates(start_date, end_date, houses, pool1, pool2, input)
+	iterateDates(start_date, end_date, houses, pool1, pool2, dataStore, input)
 
 	fmt.Print(countHousesByCommunity(houses))
 
@@ -219,8 +236,8 @@ func runSimulation(input int) {
 	// 	}
 	// }
 	
-	dataStore := make(map[string]map[int]map[string]map[int]float64)
-	loadAllCityYearData(dataStore)
+	// dataStore := make(map[string]map[int]map[string]map[int]float64)
+	// loadAllCityYearData(dataStore)
 
     // Accessing an example value:
 	// fmt.Println("--")

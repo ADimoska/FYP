@@ -9,6 +9,7 @@ import (
 	"encoding/csv"
 	"log"
 	"regexp"
+	"time"
 
 )
 
@@ -129,4 +130,37 @@ func getGGMultiplier(communityID int, currentTime string) float64 {
 		}
 	}
 	return 0.0
+}
+
+func GetSolarExposure(city string, dateStr string, dataStore map[string]map[int]map[string]map[int]float64) (float64, error) {
+	// Parse the date string
+	const layout = "2/01/2006"
+	t, err := time.Parse(layout, dateStr)
+	if err != nil {
+		return 0, fmt.Errorf("invalid date format: %v", err)
+	}
+
+	// Extract components
+	day := t.Day()
+	year := t.Year()
+	month := t.Month().String() // e.g., "January"
+
+	// Convert to title case abbreviation to match map keys (e.g., "Jan", "Feb", ...)
+	monthAbbr := month[:3]
+
+	// Capitalize first letter and lowercase the rest
+	monthAbbr = strings.Title(strings.ToLower(monthAbbr))
+
+	// Retrieve value from the nested map
+	if yearData, ok := dataStore[city]; ok {
+		if monthData, ok := yearData[year]; ok {
+			if dayData, ok := monthData[monthAbbr]; ok {
+				if value, ok := dayData[day]; ok {
+					return value, nil
+				}
+			}
+		}
+	}
+
+	return 0, fmt.Errorf("data not found for the given city and date")
 }

@@ -46,3 +46,19 @@ func (p *Pool) GiveToOtherPool(amount float64, po *Pool){
 	}
 }
 
+func (p *Pool) CalculateCostPerKWH (date string, solarIndexNextDay float64) float64 {
+	const maxSolarIndex = 10.0
+	const totalTokens = 100.0
+
+	batteryRatio := p.GetBattery() / p.GetCapacity()
+	batteryScore := (1 - batteryRatio) 
+
+	solarRatio := solarIndexNextDay / maxSolarIndex
+	solarScore := (1 - solarRatio) 
+
+	weightedSum := (2.0/3.0)*batteryScore + (1.0/3.0)*solarScore
+
+	priceInTokens := weightedSum * totalTokens
+
+	return priceInTokens
+}
