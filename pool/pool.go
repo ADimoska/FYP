@@ -18,6 +18,10 @@ func (p *Pool) AcceptEnergy(Energy float64){
 	p.battery += Energy
 }
 
+func (p *Pool) SetEnergy(Energy float64){
+	p.battery = Energy
+}
+
 func (p *Pool) GiveEnergy(Energy float64){
 	p.battery -= Energy
 }

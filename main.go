@@ -106,31 +106,31 @@ func executeDate (date string, houses []*house.House, p1, p2 *pool.Pool, input i
 func executeTime(date, time string, houses []*house.House, p1, p2 *pool.Pool, input int) {
 	for _, h := range houses {
 		var p *pool.Pool
-		var po *pool.Pool		//E4
+		// var po *pool.Pool		//E4
 		c := h.GetCommunityID()
 		if c == 1 {
 			p = p1
 		} else {
 			p = p2
 		}
-		if p == p1{
-			po = p2
-		} else {
-			po = p1
-		}
+		// if p == p1{
+		// 	po = p2
+		// } else {
+		// 	po = p1
+		// }
 		h.GetCurrentEnergy(date, time)
 		h.AddBattery(-(h.GetGC()))
 		h.AddBattery(-(h.GetCL()))
 		if h.GetBattery() < 0{
 			shortage := -(h.GetBattery()) 
 			if p.GetBattery() < shortage{
-				if po.GetBattery() < shortage{
+				// if po.GetBattery() < shortage{
 					h.AddBlackout()
 					h.ResetBattery()
-				} else {
-					po.GiveToOtherPool(-h.GetBattery(), p)
-					p.GiveEnergy(-h.GetBattery())
-				}
+				// } else {
+					// po.GiveToOtherPool(-h.GetBattery(), p)
+					// p.GiveEnergy(-h.GetBattery())
+				// }
 				
 			} else {
 				p.GiveEnergy(-h.GetBattery())
@@ -139,14 +139,16 @@ func executeTime(date, time string, houses []*house.House, p1, p2 *pool.Pool, in
 		}
 		multiGG := getGGMultiplier(c, time) //E4
 		h.AddBattery(multiGG*h.GetGG()) // change int to change capacity experiment_id_1 unlimited battery per house, no pool, no exchange
-		donateTreshold := 170.00 // E3 E4
+		donateTreshold := 56.00 // E3 E4
 		// donateTreshold := input
 		if h.GetBattery() > donateTreshold{ // E3
 			extraBattery := h.GetBattery() - donateTreshold // E3
 			p.AcceptEnergy(extraBattery)
 			if p.GetBattery() > p.GetCapacity(){
-				poolExtraBattery := p.GetBattery() - p.GetCapacity()
-				p.GiveToOtherPool(poolExtraBattery, po)
+				p.SetEnergy(p.GetCapacity())
+
+				// poolExtraBattery := p.GetBattery() - p.GetCapacity()
+				// p.GiveToOtherPool(poolExtraBattery, po)
 			}
 			h.AddBattery(-extraBattery)
 
@@ -172,8 +174,8 @@ func runSimulation(input int) {
 	}
 	
 	houses := ParseHousesFromCSVRecords(records)
-	pool1 := pool.NewPool(0, 170*2*49)
-	pool2 := pool.NewPool(0, 170*2*65)
+	pool1 := pool.NewPool(0, 56*2*49)
+	pool2 := pool.NewPool(0, 56*2*65)
 	
 	for i, h := range houses{
 		fmt.Printf("House %d: %+v\n", i+1, *h)

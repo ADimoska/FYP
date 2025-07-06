@@ -5,3 +5,21 @@ Total Blackouts C2: 18612
 Zero Blackout Houses: 62
 Zero Blackout Houses C1: 27
 Zero Blackout Houses C2: 35
+
+the common pools don't exchange
+Total Blackouts: 31185
+Total Blackouts C1: 10747
+Total Blackouts C2: 20438
+Zero Blackout Houses: 60
+Zero Blackout Houses C1: 27
+Zero Blackout Houses C2: 33
+
+
+battery capacity 56:
+Average Thresholds: 
+Total Blackouts: 44087
+Total Blackouts C1: 16378
+Total Blackouts C2: 27709
+Zero Blackout Houses: 25
+Zero Blackout Houses C1: 10
+Zero Blackout Houses C2: 15
