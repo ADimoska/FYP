@@ -105,13 +105,14 @@ func executeDate (date string, houses []*house.House, p1, p2 *pool.Pool, input i
 
 func executeTime(date, time string, houses []*house.House, p1, p2 *pool.Pool, input int) {
 	for _, h := range houses {
-		var p *pool.Pool		//E4
+		// var p *pool.Pool		//E4
+		p := p1
 		c := h.GetCommunityID()
-		if c == 1 {
-			p = p1
-		} else {
-			p = p2
-		}
+		// if c == 1 {
+		// 	p = p1
+		// } else {
+		// 	p = p2
+		// }
 		h.GetCurrentEnergy(date, time)
 		h.AddBattery(-(h.GetGC()))
 		h.AddBattery(-(h.GetCL()))
